@@ -1,9 +1,35 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Safe environment variable access for browser/production environments
+const getApiKey = () => {
+  try {
+    return typeof process !== 'undefined' ? process.env.API_KEY : '';
+  } catch {
+    return '';
+  }
+};
+
+const apiKey = getApiKey();
+// Only initialize if API key is present to avoid crashing the module
+const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 export async function fetchAppDescription() {
+  const fallbackData = {
+    headline: "ELITE MINING ENGINE",
+    subheadline: "The industry's most powerful mobile mining engine. Optimized for efficiency, engineered for the future.",
+    features: [
+      { title: "Peak Hashrate", description: "Proprietary algorithms that maximize hardware throughput with minimal heat." },
+      { title: "Safe Node", description: "End-to-end encrypted node communication using secure protocols." },
+      { title: "Smart Data", description: "Real-time performance tracking and analytics for consistent results." }
+    ]
+  };
+
+  if (!ai) {
+    console.warn("Gemini API key not found. Using fallback content.");
+    return fallbackData;
+  }
+
   const prompt = "Generate a futuristic, high-tech description for a professional mining software called 'HASHGO'. Include 3 key features like 'Hash-rate Optimization', 'Dynamic Pool Switching', and 'Protocol Analytics'. Return as JSON.";
 
   try {
@@ -27,22 +53,16 @@ export async function fetchAppDescription() {
                 }
               }
             }
-          }
+          },
+          required: ["headline", "subheadline", "features"]
         }
       }
     });
 
-    return JSON.parse(response.text);
+    const text = response.text;
+    return text ? JSON.parse(text) : fallbackData;
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return {
-      headline: "Master Your Mining Workflow",
-      subheadline: "HASHGO delivers elite-tier mining management for modern hardware. Secure, fast, and remarkably efficient.",
-      features: [
-        { title: "Hash Optimization", description: "Squeeze every drop of performance from your mobile chipset." },
-        { title: "Dynamic Logic", description: "Smart algorithm switching based on network difficulty." },
-        { title: "Global Sync", description: "Real-time telemetry across all your HASHGO nodes." }
-      ]
-    };
+    return fallbackData;
   }
 }
