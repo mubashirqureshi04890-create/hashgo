@@ -1,38 +1,28 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Safe environment variable access for browser/production environments
-const getApiKey = () => {
-  try {
-    return typeof process !== 'undefined' ? process.env.API_KEY : '';
-  } catch {
-    return '';
-  }
-};
-
-const apiKey = getApiKey();
-// Only initialize if API key is present to avoid crashing the module
-const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
-
 export async function fetchAppDescription() {
   const fallbackData = {
-    headline: "ELITE MINING ENGINE",
-    subheadline: "The industry's most powerful mobile mining engine. Optimized for efficiency, engineered for the future.",
+    headline: "PREMIUM MINING ENGINE",
+    subheadline: "The industry's most efficient mobile mining utility. High-performance data analysis and secure node connectivity.",
     features: [
-      { title: "Peak Hashrate", description: "Proprietary algorithms that maximize hardware throughput with minimal heat." },
-      { title: "Safe Node", description: "End-to-end encrypted node communication using secure protocols." },
-      { title: "Smart Data", description: "Real-time performance tracking and analytics for consistent results." }
+      { title: "Peak Hashrate", description: "Optimized algorithms for maximum hardware efficiency." },
+      { title: "Secure Node", description: "Encrypted communication for safe data transmission." },
+      { title: "Smart Metrics", description: "Real-time performance tracking and detailed analytics." }
     ]
   };
 
-  if (!ai) {
-    console.warn("Gemini API key not found. Using fallback content.");
-    return fallbackData;
-  }
-
-  const prompt = "Generate a futuristic, high-tech description for a professional mining software called 'HASHGO'. Include 3 key features like 'Hash-rate Optimization', 'Dynamic Pool Switching', and 'Protocol Analytics'. Return as JSON.";
-
   try {
+    // Safe access to API Key to prevent "black screen" crashes in production
+    const apiKey = (globalThis as any).process?.env?.API_KEY;
+    
+    if (!apiKey) {
+      return fallbackData;
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+    const prompt = "Generate a futuristic description for 'HASHGO' mining software. JSON format.";
+
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
@@ -62,7 +52,7 @@ export async function fetchAppDescription() {
     const text = response.text;
     return text ? JSON.parse(text) : fallbackData;
   } catch (error) {
-    console.error("Gemini API Error:", error);
+    console.error("Service Error:", error);
     return fallbackData;
   }
 }
